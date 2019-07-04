@@ -1,0 +1,9 @@
+id: testmanifest
+location: testlocation
+specVersion: 0.0.1
+description: dfusion test graph
+schema:
+    id: testschema
+    file: 
+      /: schema.graphql
+dataSources: []

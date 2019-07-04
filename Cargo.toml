@@ -1,0 +1,22 @@
+[package]
+name = "dfusion-graph"
+version = "0.1.0"
+authors = ["Felix Leupold <felixleupold90@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
+graph-datasource-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
+graph-store-postgres = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
+
+env_logger = "0.5.10"
+failure = "0.1.2"
+futures = "0.1.21"
+graphql-parser = "0.2.1"
+lazy_static = "1.2.0"
+parity-wasm = "0.31"
+serde_yaml = "0.7"
+slog = "2.2.3"
+tiny-keccak = "1.4.2"
+web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "trace-struct-pre-ethereum-types" }
