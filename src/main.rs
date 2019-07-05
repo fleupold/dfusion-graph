@@ -5,27 +5,31 @@ extern crate graph_datasource_ethereum;
 extern crate lazy_static;
 
 mod runtime_host;
-mod subgraph_provider;
+mod link_resolver;
 
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use std::time::Duration;
 
 use graph::components::forward;
-use graph::prelude::{SubgraphRegistrar as SubgraphRegistrarTrait, *};
+use graph::prelude::{
+    SubgraphRegistrar as SubgraphRegistrarTrait,
+    SubgraphAssignmentProvider as SubgraphAssignmentProviderTrait,
+    *
+};
 use graph::log::logger;
 use graph::tokio_executor;
 use graph::tokio_timer;
 use graph::tokio_timer::timer::Timer;
 
-use graph_core::{SubgraphInstanceManager, SubgraphRegistrar};
+use graph_core::{SubgraphInstanceManager, SubgraphRegistrar, SubgraphAssignmentProvider};
 
 use graph_datasource_ethereum::{BlockStreamBuilder, Transport};
 
 use graph_store_postgres::{Store as DieselStore, StoreConfig};
 
 use runtime_host::DummyRuntimeHost;
-use subgraph_provider::DummySubgraphProvider;
+use link_resolver::DummyLinkResolver;
 
 lazy_static! {
     static ref ANCESTOR_COUNT: u64 = 50;
@@ -156,19 +160,26 @@ fn async_main() -> impl Future<Item = (), Error = ()> + Send + 'static {
         DummyRuntimeHost {},
         block_stream_builder,
     );
+    
+    let link_resolver = Arc::new(DummyLinkResolver {});
+    let graphql_runner = Arc::new(graph_core::GraphQlRunner::new(&logger, store.clone()));
+    let mut subgraph_provider = SubgraphAssignmentProvider::new(
+        &logger_factory,
+        link_resolver.clone(),
+        store.clone(),
+        graphql_runner.clone(),
+    );
 
-    let mut subgraph_provider = DummySubgraphProvider::new(logger.clone(), store.clone());
 
     // Forward subgraph events from the subgraph provider to the subgraph instance manager
     tokio::spawn(forward(&mut subgraph_provider, &subgraph_instance_manager).unwrap());
-
-    let subgraph_arc = Arc::new(subgraph_provider);
+    let subgraph_provider_arc = Arc::new(subgraph_provider);
 
     // Create named subgraph provider for resolving subgraph name->ID mappings	
     let subgraph_registrar = Arc::new(SubgraphRegistrar::new(	
         &logger_factory,	
-        subgraph_arc.clone(),	
-        subgraph_arc.clone(),	
+        link_resolver,	
+        subgraph_provider_arc.clone(),	
         store.clone(),	
         store.clone(),	
         node_id.clone(),	
@@ -186,10 +197,16 @@ fn async_main() -> impl Future<Item = (), Error = ()> + Send + 'static {
 
     tokio::spawn(	
         subgraph_registrar	
-            .create_subgraph_version(name, subgraph_id, node_id)		
+            .create_subgraph_version(name, subgraph_id.clone(), node_id)		
             .then(|result| {	
-                Ok(result.expect("Failed to deploy subgraph from `--subgraph` flag"))	
-            }),	
+                Ok(result.expect("Failed to deploy subgraph from `--subgraph` flag"))
+            })
+            .and_then(move |_| {
+                subgraph_provider_arc.start(subgraph_id)
+            })
+            .then(|result| {
+                Ok(result.expect("Failed to start subgraph"))
+            }),
     );
 
     future::empty()

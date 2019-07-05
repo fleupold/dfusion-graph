@@ -6,4 +6,24 @@ schema:
     id: testschema
     file: 
       /: schema.graphql
-dataSources: []
+dataSources:
+  - kind: DataSource
+    name: getCurrentStateRoot
+    source:
+      address: '0x51E06e232EB9959B90ba788c4e4d61ffD528520C'
+      abi: Test
+    mapping:
+      kind: Mapping
+      apiVersion: 0.0.1
+      language: language
+      entities: 
+        - Test
+      abis:
+        - name: Test
+          file: 
+            /: Test.json
+      eventHandlers:
+        - event: Foo()
+          handler: rust
+      file: 
+        /: test.rs
