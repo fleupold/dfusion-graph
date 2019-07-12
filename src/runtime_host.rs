@@ -2,11 +2,14 @@ use failure::Error;
 use futures::future::*;
 use slog::Logger;
 use std::sync::Arc;
+use std::time::SystemTime;
 
+use graph::components::ethereum::{EthereumCall, EthereumBlockTriggerType, EthereumBlock};
+use graph::components::store::{EntityOperation, EntityKey};
 use graph::components::subgraph::{RuntimeHost, RuntimeHostBuilder, BlockState};
-use graph::components::ethereum::{EthereumCall, EthereumBlockTriggerType, EthereumBlock}
-;
+
 use graph::data::subgraph::{DataSource, SubgraphDeploymentId};
+use graph::data::store::{Entity};
 
 use tiny_keccak::keccak256;
 use web3::types::{Log, Transaction};
@@ -55,6 +58,22 @@ impl RuntimeHost for DummyRuntimeHost {
         state: BlockState,
     ) -> Box<Future<Item = BlockState, Error = Error> + Send> {
         println!("Received Log Event");
+        let entity_id: String = format!("{:?}", SystemTime::now()); 
+        let key = EntityKey {
+            subgraph_id: SubgraphDeploymentId::new("deploymentid").unwrap(),
+            entity_type: "Gravatar".to_string(),
+            entity_id: entity_id.clone()
+        };
+        let mut data = Entity::new();
+        data.set("id", entity_id);
+        data.set("owner", "Felix");
+        data.set("displayName", "fleupold");
+        data.set("imageUrl", "None");
+        let mut state = state;
+        state.entity_operations.push(EntityOperation::Set {
+            key, 
+            data
+        });
         Box::new(ok(state))
     }
 

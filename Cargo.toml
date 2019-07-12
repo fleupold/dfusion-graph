@@ -9,6 +9,8 @@ graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e
 graph = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
 graph-datasource-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
 graph-store-postgres = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
+graph-server-http = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
+graph-server-websocket = { git = "https://github.com/graphprotocol/graph-node", rev = "c5d0e81bcaef3ee0200fed3dede41d66e721b93a" }
 
 env_logger = "0.5.10"
 failure = "0.1.2"

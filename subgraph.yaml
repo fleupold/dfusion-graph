@@ -10,7 +10,7 @@ dataSources:
   - kind: DataSource
     name: getCurrentStateRoot
     source:
-      address: '0x51E06e232EB9959B90ba788c4e4d61ffD528520C'
+      address: '0xe0F663A6cC05ab020fc30B6E16eaD5712d616027'
       abi: Test
     mapping:
       kind: Mapping

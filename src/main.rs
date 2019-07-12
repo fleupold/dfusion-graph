@@ -26,6 +26,9 @@ use graph_core::{SubgraphInstanceManager, SubgraphRegistrar, SubgraphAssignmentP
 
 use graph_datasource_ethereum::{BlockStreamBuilder, Transport};
 
+use graph_server_http::GraphQLServer as GraphQLQueryServer;
+use graph_server_websocket::SubscriptionServer as GraphQLSubscriptionServer;
+
 use graph_store_postgres::{Store as DieselStore, StoreConfig};
 
 use runtime_host::DummyRuntimeHost;
@@ -195,9 +198,13 @@ fn async_main() -> impl Future<Item = (), Error = ()> + Send + 'static {
     let subgraph_id = SubgraphDeploymentId::new("deploymentid").unwrap();
     let node_id = NodeId::new("nodeId").unwrap();
 
+    // subgraph_registrar.create_subgraph(
+    //     SubgraphName::new("subgraph").unwrap()
+    // );
+
     tokio::spawn(	
         subgraph_registrar	
-            .create_subgraph_version(name, subgraph_id.clone(), node_id)		
+            .create_subgraph_version(name, subgraph_id.clone(), node_id.clone())		
             .then(|result| {	
                 Ok(result.expect("Failed to deploy subgraph from `--subgraph` flag"))
             })
@@ -207,6 +214,29 @@ fn async_main() -> impl Future<Item = (), Error = ()> + Send + 'static {
             .then(|result| {
                 Ok(result.expect("Failed to start subgraph"))
             }),
+    );
+
+    let mut graphql_server = GraphQLQueryServer::new(
+        &logger_factory,
+        graphql_runner.clone(),
+        store.clone(),
+        node_id.clone(),
+    );
+    let mut subscription_server =
+        GraphQLSubscriptionServer::new(&logger, graphql_runner.clone(), store.clone());
+
+    // Serve GraphQL queries over HTTP
+    tokio::spawn(
+        graphql_server
+            .serve(8000, 8001)
+            .expect("Failed to start GraphQL query server"),
+    );
+
+    // Serve GraphQL subscriptions over WebSockets
+    tokio::spawn(
+        subscription_server
+            .serve(8001)
+            .expect("Failed to start GraphQL subscription server"),
     );
 
     future::empty()
